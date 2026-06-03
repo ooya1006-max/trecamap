@@ -66,7 +66,9 @@ body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:#f4f
 <div id="gps-bar">
   <button id="gps-btn" onclick="getGPS()">📍 現在地を取得</button>
   <span id="gps-status">GPS未取得 — 取得すると近くの店が距離順に並びます</span>
-  <button onclick="startMapAdd()" style="padding:4px 12px;border-radius:12px;border:1px solid #7cf;background:transparent;color:#7cf;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;margin-left:auto">＋ 地図から追加</button>
+  <span id="sync-badge" style="font-size:11px;color:#adf;margin-left:4px"></span>
+  <button onclick="gasLoad()" style="padding:4px 10px;border-radius:12px;border:1px solid #7ab;background:transparent;color:#7cf;font-size:11px;cursor:pointer;white-space:nowrap">🔄 更新</button>
+  <button onclick="startMapAdd()" style="padding:4px 12px;border-radius:12px;border:1px solid #7cf;background:transparent;color:#7cf;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">＋ 地図から追加</button>
 </div>
 <div id="filter-bar">
   <button class="fb on" onclick="setF('all')">すべて</button>
@@ -508,11 +510,11 @@ function applyRep(id,status,memo){
   s.timestamp=Date.now();
   const now=new Date();
   s.time=`${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const expireStr=status!=="unknown"?' <span style="color:#aaa">（24h後自動クリア）</span>':'';
   if(leafletMarkers[id]){
     leafletMarkers[id].setIcon(makeIcon(s));
     leafletMarkers[id].setPopupContent(`<b>${s.name}</b><br><small>${s.area}</small><br><span style="color:${SC[s.status]}">${SL[s.status]}${s.memo?' : '+s.memo:''}</span><br><small>${s.time}</small>`);
   }
+  gasPost({id:s.id,status:s.status,memo:s.memo,time:s.time,timestamp:s.timestamp});
   renderList();
 }
 
@@ -828,7 +830,56 @@ function confirmDelete(id){
   renderList();
 }
 
-window.addEventListener('load',()=>{initMap();renderList();});
+// ── Google Apps Script 連携 ──
+const GAS_URL='https://script.google.com/macros/s/AKfycbzpJAZnZHgusDjJW_A3-TTess03A1Qmr2wAyyvMd6f-qzcO_74D20JByGA1t-nZuhgYmQ/exec';
+
+function gasPost(data){
+  fetch(GAS_URL,{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(data)
+  }).catch(e=>console.warn('GAS POST error',e));
+}
+
+async function gasLoad(){
+  const badge=document.getElementById('sync-badge');
+  if(badge) badge.textContent='🔄 同期中...';
+  try{
+    // GASはリダイレクトするのでno-corsではなくcorsモードで取得
+    const r=await fetch(GAS_URL+'?t='+Date.now(),{
+      method:'GET',
+      redirect:'follow'
+    });
+    const json=await r.json();
+    if(!json.ok||!json.data) return;
+    const now=Date.now();
+    json.data.forEach(row=>{
+      const s=stores.find(x=>String(x.id)===String(row.id));
+      if(!s) return;
+      const ts=Number(row.timestamp)||0;
+      if(ts&&(now-ts)<24*60*60*1000){
+        s.status=row.status||'unknown';
+        s.memo=row.memo||'';
+        s.time=row.time||'';
+        s.timestamp=ts;
+        if(leafletMarkers[s.id]) leafletMarkers[s.id].setIcon(makeIcon(s));
+      }
+    });
+    renderList();
+    if(badge){ badge.textContent='✅ 同期済'; setTimeout(()=>{badge.textContent='';},3000); }
+  }catch(e){
+    console.warn('GAS load error',e);
+    if(badge){ badge.textContent='⚠️ オフライン'; setTimeout(()=>{badge.textContent='';},3000); }
+  }
+}
+
+window.addEventListener('load',()=>{
+  initMap();
+  renderList();
+  gasLoad();
+  setInterval(gasLoad,60000);
+});
 </script>
 </body>
 </html>
