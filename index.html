@@ -64,9 +64,9 @@ body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:#f4f
   </div>
 </div>
 <div id="gps-bar" style="flex-wrap:nowrap;overflow-x:auto">
-  <button id="gps-btn" onclick="getGPS()">📍 現在地</button>
+  <button id="gps-btn" onclick="getGPS()" style="padding:4px 12px;border-radius:12px;border:1px solid #7cf;background:transparent;color:#7cf;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">📍 現在地</button>
   <span id="gps-status" style="font-size:11px;color:#adf;white-space:nowrap"></span>
-  <button onclick="gasLoad()" style="padding:4px 10px;border-radius:12px;border:1px solid #7ab;background:transparent;color:#7cf;font-size:11px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px">🔄 <span id="sync-badge" style="font-size:11px">更新</span></button>
+  <button onclick="gasLoad()" style="padding:4px 10px;border-radius:12px;border:1px solid #7ab;background:transparent;color:#adf;font-size:11px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px">🔄 <span id="sync-badge" style="font-size:11px">同期</span></button>
 </div>
 <div id="filter-bar">
   <button class="fb on" onclick="setF('all')">すべて</button>
@@ -101,6 +101,9 @@ body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:#f4f
         <option value="yamada">ヤマダ電機</option><option value="joshin">ジョーシン</option>
         <option value="heiando">平安堂</option>
         <option value="trecapit">トレカピット</option>
+        <option value="beisia">ベイシア</option>
+        <option value="kadorabo">カードラボ</option>
+        <option value="batosta">バトスタ</option>
         <option value="other">その他</option>
     </div>
   </div>
@@ -343,13 +346,24 @@ const RAW=[
 // ── トレカピット ──
 {id:451,name:"トレカピット 長野駅前店",   lat:36.6445,lng:138.1859,type:"trecapit",area:"長野市"},
 {id:452,name:"西友 川中島店",             lat:36.594333,lng:138.156836,type:"other",   area:"長野市"},
+// ── ベイシア ──
+{id:461,name:"ベイシア 更埴店",            lat:36.527050,lng:138.121711,type:"beisia",  area:"千曲市"},
+{id:462,name:"ベイシア 東御店",            lat:36.366309,lng:138.349715,type:"beisia",  area:"東御市"},
+{id:463,name:"ベイシア 佐久平店",          lat:36.275539,lng:138.467499,type:"beisia",  area:"佐久市"},
+{id:464,name:"ベイシア 安曇野堀金店",      lat:36.302320,lng:137.875773,type:"beisia",  area:"安曇野市"},
+{id:465,name:"ベイシア 飯山店",            lat:36.832035,lng:138.356693,type:"beisia",  area:"飯山市"},
+{id:466,name:"ベイシア 坂城店",            lat:36.427928,lng:138.195303,type:"beisia",  area:"坂城町"},
+// ── カードラボ ──
+{id:471,name:"カードラボ 長野店",          lat:36.644692,lng:138.188169,type:"kadorabo",area:"長野市"},
+// ── バトスタ ──
+{id:481,name:"バトスタ 長野駅前店",        lat:36.645505,lng:138.186440,type:"batosta", area:"長野市"},
 ];
 
-const TC={seven:"#E24B4A",lawson:"#378ADD",famima:"#1D9E75",geo:"#7F77DD",bookoff:"#BA7517",furuichi:"#E0820A",aeon:"#D4537E",toy:"#0F6E56",yamada:"#FF0000",joshin:"#0066CC",heiando:"#8B4513",trecapit:"#9B59B6",other:"#888780"};
-const TL={seven:"セブン",lawson:"ローソン",famima:"ファミマ",geo:"GEO",bookoff:"ブックオフ",furuichi:"ふるいち",aeon:"イオン",toy:"おもちゃ屋",yamada:"ヤマダ",joshin:"ジョーシン",heiando:"平安堂",trecapit:"トレカピット",other:"その他"};
+const TC={seven:"#E24B4A",lawson:"#378ADD",famima:"#1D9E75",geo:"#7F77DD",bookoff:"#BA7517",furuichi:"#E0820A",aeon:"#D4537E",toy:"#0F6E56",yamada:"#FF0000",joshin:"#0066CC",heiando:"#8B4513",trecapit:"#9B59B6",beisia:"#2E86AB",kadorabo:"#C0392B",batosta:"#F39C12",other:"#888780"};
+const TL={seven:"セブン",lawson:"ローソン",famima:"ファミマ",geo:"GEO",bookoff:"ブックオフ",furuichi:"ふるいち",aeon:"イオン",toy:"おもちゃ屋",yamada:"ヤマダ",joshin:"ジョーシン",heiando:"平安堂",trecapit:"トレカピット",beisia:"ベイシア",kadorabo:"カードラボ",batosta:"バトスタ",other:"その他"};
 const SC={have:"#1565C0",none:"#E24B4A",unknown:"#aaa"};
 const SL={have:"✓ あり",none:"✗ なし",unknown:"未確認"};
-const SI={seven:"7",lawson:"L",famima:"F",geo:"G",bookoff:"B",furuichi:"古",aeon:"A",toy:"T",yamada:"Y",joshin:"J",heiando:"平",trecapit:"P",other:"?"};
+const SI={seven:"7",lawson:"L",famima:"F",geo:"G",bookoff:"B",furuichi:"古",aeon:"A",toy:"T",yamada:"Y",joshin:"J",heiando:"平",trecapit:"P",beisia:"ベ",kadorabo:"カ",batosta:"バ",other:"?"};
 
 let stores=RAW.map(s=>({...s,status:"unknown",time:"",memo:"",timestamp:null,dist:null}));
 let cf="all",map,leafletMarkers={},gpsMarker=null,userLat=null,userLng=null,sortByReport=false;
@@ -403,15 +417,14 @@ function getGPS(){
     userLat=pos.coords.latitude;userLng=pos.coords.longitude;
     if(gpsMarker)gpsMarker.remove();
     gpsMarker=L.marker([userLat,userLng],{icon:L.divIcon({html:'<div class="pin-gps"></div>',className:'',iconSize:[14,14],iconAnchor:[7,7]})}).bindPopup('現在地').addTo(map);
-    // 下パネル分を考慮してオフセット
-    map.setView([userLat,userLng],15,{animate:true});
     const bottomH=document.getElementById('bottom').offsetHeight;
-    map.panBy([0, bottomH*3],{animate:false});
+    const headerH=document.getElementById('gps-bar').offsetHeight+document.getElementById('filter-bar').offsetHeight+56;
+    map.flyTo([userLat,userLng],15,{animate:true,paddingTopLeft:[0,headerH],paddingBottomRight:[0,bottomH]});
     stores.forEach(s=>{s.dist=calcDist(userLat,userLng,s.lat,s.lng);});
     stores.sort((a,b)=>a.dist-b.dist);
     const nearest=stores.filter(s=>s.dist<3);
     status.textContent=`📍 取得済`;
-    btn.textContent='📍 更新';
+    btn.textContent='📍 現在地';
     // fb-nearbyは表示しない
     const banner=document.getElementById('nearby-banner');
     if(nearest.length>0){banner.style.display='block';banner.textContent=`📍 最寄り: ${nearest[0].name}（${nearest[0].dist.toFixed(1)}km）`;}
@@ -430,7 +443,7 @@ function calcDist(lat1,lng1,lat2,lng2){
 
 function setF(f){
   cf=f;
-  const lbl={all:"すべて",seven:"セブン",lawson:"ローソン",famima:"ファミマ",nearby:"📍 近く"};
+  const lbl={all:"すべて",seven:"セブン",lawson:"ローソン",famima:"ファミマ",beisia:"ベイシア",kadorabo:"カードラボ",batosta:"バトスタ",nearby:"📍 近く"};
   document.querySelectorAll('.fb').forEach(b=>b.classList.toggle('on',b.textContent===lbl[f]));
   refreshMarkers();renderList();
 }
@@ -514,7 +527,8 @@ function applyRep(id,status,memo){
 
 function renderList(){
   checkExpiry();
-  const list=document.getElementById('slist');list.innerHTML='';
+  const list=document.getElementById('slist');
+  list.innerHTML='';
   let vis=[...stores.filter(s=>{
     if(cf==="nearby")return s.dist!==null&&s.dist<3;
     return cf==="all"||s.type===cf;
@@ -906,7 +920,11 @@ async function gasLoad(){
         if(leafletMarkers[s.id]) leafletMarkers[s.id].setIcon(makeIcon(s));
       }
     });
+    // 同期時はスクロール位置を保持したままrenderList
+    const bottom=document.getElementById('bottom');
+    const scrollTop=bottom?bottom.scrollTop:0;
     renderList();
+    if(bottom) bottom.scrollTop=scrollTop;
     const now2=new Date();
     const t=`${now2.getHours()}:${String(now2.getMinutes()).padStart(2,'0')}`;
     if(badge){ badge.textContent=`${t}同期済`; }
