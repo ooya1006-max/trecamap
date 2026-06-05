@@ -656,11 +656,10 @@ function toggleSort(){
 function zoomToStore(id){
   const s=stores.find(x=>x.id===id);
   if(!s) return;
-  // 地図をその店舗にズーム
-  map.setView([s.lat,s.lng],14);
-  // ピンのポップアップを開く
+  const bottomH=document.getElementById('bottom').offsetHeight;
+  const headerH=document.getElementById('gps-bar').offsetHeight+document.getElementById('filter-bar').offsetHeight+56;
+  map.flyTo([s.lat,s.lng],15,{animate:true,paddingTopLeft:[0,headerH],paddingBottomRight:[0,bottomH]});
   if(leafletMarkers[id]) leafletMarkers[id].openPopup();
-  // 地図エリアまでスクロール
   document.getElementById('map').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -958,8 +957,8 @@ async function gasLoad(){
         s.time=row.time||'';
         s.timestamp=ts||now2;
         if(leafletMarkers[s.id]) leafletMarkers[s.id].setIcon(makeIcon(s));
-        // 新着検出：前回同期より新しい報告かつステータスが変わった
-        if(ts>prevTs && s.status!==prevStatus && s.status!=='unknown'){
+        // 新着検出：前回同期より新しい報告かつステータスが変わった＆5分以内
+        if(ts>prevTs && s.status!==prevStatus && s.status!=='unknown' && (Date.now()-ts)<5*60*1000){
           newUpdates.push(s);
         }
       }
