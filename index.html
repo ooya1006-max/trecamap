@@ -77,6 +77,7 @@ body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:#f4f
   <button class="fb" id="fb-sort" onclick="toggleSort()" style="margin-left:auto">📋 報告順</button>
 </div>
 <div id="map"></div>
+<div id="notify-banner" style="display:none;position:absolute;left:8px;right:8px;top:8px;z-index:1001;background:#1a1a2e;color:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 3px 12px rgba(0,0,0,.4);max-height:180px;overflow-y:auto;transition:opacity 1s ease"></div>
 <button onclick="startMapAdd()" style="position:absolute;bottom:12px;right:12px;z-index:1000;padding:10px 14px;border-radius:50%;border:none;background:#0f3460;color:#fff;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);line-height:1">＋</button>
 <div id="bottom">
   <div id="nearby-banner"></div>
@@ -606,6 +607,42 @@ function confirmRep(id, status, name){
   document.body.appendChild(dlg);
 }
 
+function fadeOutBanner(){
+  const banner=document.getElementById('notify-banner');
+  if(!banner) return;
+  banner.style.opacity='0';
+  setTimeout(()=>{ banner.style.display='none'; banner.style.opacity='1'; }, 1000);
+}
+
+function showNotifyBanner(updates){
+  const banner=document.getElementById('notify-banner');
+  if(!banner) return;
+
+  const lines=updates.map(s=>{
+    const icon=s.status==='have'?'✅':'❌';
+    const memo=s.memo?` <span style="color:#7cf">- ${s.memo}</span>`:'';
+    return `<div onclick="zoomToStore(${s.id})" style="padding:4px 0;border-bottom:0.5px solid rgba(255,255,255,.15);cursor:pointer">
+      ${icon} <b>${s.name}</b>${memo} <span style="color:#aaa;font-size:10px">${s.time}</span>
+    </div>`;
+  }).join('');
+
+  banner.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div style="font-size:12px;font-weight:700;color:#7cf">🔔 新着情報（${updates.length}件）</div>
+      <button onclick="fadeOutBanner()" style="background:transparent;border:none;color:#aaa;font-size:14px;cursor:pointer">✕</button>
+    </div>
+    <div style="font-size:12px">${lines}</div>`;
+  banner.style.display='block';
+  banner.style.opacity='1';
+
+  // 8秒後にフェードアウト開始→1秒かけてふわっと消える
+  if(banner._timer) clearTimeout(banner._timer);
+  banner._timer=setTimeout(()=>{
+    banner.style.opacity='0';
+    setTimeout(()=>{ banner.style.display='none'; banner.style.opacity='1'; }, 1000);
+  }, 8000);
+}
+
 function toggleSort(){
   sortByReport=!sortByReport;
   const btn=document.getElementById('fb-sort');
@@ -907,17 +944,24 @@ async function gasLoad(){
     const json=await r.json();
     if(!json.ok||!json.data) return;
     const now=Date.now();
+    const newUpdates=[];
     json.data.forEach(row=>{
       const s=stores.find(x=>String(x.id)===String(row.id));
       if(!s) return;
       const ts=Number(row.timestamp)||0;
-      // 24時間以内 or timestampがない場合も反映
-      if(!ts || (now-ts)<24*60*60*1000){
+      const now2=Date.now();
+      if(!ts || (now2-ts)<24*60*60*1000){
+        const prevStatus=s.status;
+        const prevTs=s.timestamp||0;
         if(row.status&&row.status!=='') s.status=row.status;
         s.memo=row.memo||'';
         s.time=row.time||'';
-        s.timestamp=ts||now;
+        s.timestamp=ts||now2;
         if(leafletMarkers[s.id]) leafletMarkers[s.id].setIcon(makeIcon(s));
+        // 新着検出：前回同期より新しい報告かつステータスが変わった
+        if(ts>prevTs && s.status!==prevStatus && s.status!=='unknown'){
+          newUpdates.push(s);
+        }
       }
     });
     // 同期時はスクロール位置を保持したままrenderList
@@ -925,8 +969,12 @@ async function gasLoad(){
     const scrollTop=bottom?bottom.scrollTop:0;
     renderList();
     if(bottom) bottom.scrollTop=scrollTop;
-    const now2=new Date();
-    const t=`${now2.getHours()}:${String(now2.getMinutes()).padStart(2,'0')}`;
+
+    // 新着通知バナー表示
+    if(newUpdates.length>0) showNotifyBanner(newUpdates);
+
+    const now3=new Date();
+    const t=`${now3.getHours()}:${String(now3.getMinutes()).padStart(2,'0')}`;
     if(badge){ badge.textContent=`${t}同期済`; }
   }catch(e){
     console.warn('GAS load error',e);
