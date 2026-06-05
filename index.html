@@ -74,6 +74,7 @@ body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:#f4f
   <button class="fb" onclick="setF('lawson')">ローソン</button>
   <button class="fb" onclick="setF('famima')">ファミマ</button>
   <button class="fb" id="fb-nearby" style="display:none" onclick="setF('nearby')">📍 近く</button>
+  <button class="fb" id="fb-sort" onclick="toggleSort()" style="margin-left:auto">📋 報告順</button>
 </div>
 <div id="map"></div>
 <button onclick="startMapAdd()" style="position:absolute;bottom:12px;right:12px;z-index:1000;padding:10px 14px;border-radius:50%;border:none;background:#0f3460;color:#fff;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);line-height:1">＋</button>
@@ -351,7 +352,7 @@ const SL={have:"✓ あり",none:"✗ なし",unknown:"未確認"};
 const SI={seven:"7",lawson:"L",famima:"F",geo:"G",bookoff:"B",furuichi:"古",aeon:"A",toy:"T",yamada:"Y",joshin:"J",heiando:"平",trecapit:"P",other:"?"};
 
 let stores=RAW.map(s=>({...s,status:"unknown",time:"",memo:"",timestamp:null,dist:null}));
-let cf="all",map,leafletMarkers={},gpsMarker=null,userLat=null,userLng=null;
+let cf="all",map,leafletMarkers={},gpsMarker=null,userLat=null,userLng=null,sortByReport=false;
 
 function initMap(){
   map=L.map('map').setView([36.45,138.20],12);
@@ -518,7 +519,13 @@ function renderList(){
     if(cf==="nearby")return s.dist!==null&&s.dist<3;
     return cf==="all"||s.type===cf;
   })];
-  if(userLat!==null)vis.sort((a,b)=>(a.dist||999)-(b.dist||999));
+  if(sortByReport) vis.sort((a,b)=>{
+    // 報告あり→なし→未確認の順、同じステータスは報告時刻が新しい順
+    const ord={have:0,none:1,unknown:2};
+    if(ord[a.status]!==ord[b.status]) return ord[a.status]-ord[b.status];
+    return (b.timestamp||0)-(a.timestamp||0);
+  });
+  else if(userLat!==null)vis.sort((a,b)=>(a.dist||999)-(b.dist||999));
   else vis.sort((a,b)=>({have:0,none:1,unknown:2}[a.status]-{have:0,none:1,unknown:2}[b.status]));
   vis.forEach(s=>{
     const sc=SC[s.status],tc=TC[s.type];
@@ -583,6 +590,16 @@ function confirmRep(id, status, name){
         style="flex:1;padding:9px 0;border-radius:6px;border:1px solid #ccc;background:#fff;font-size:13px;cursor:pointer">キャンセル</button>
     </div>`;
   document.body.appendChild(dlg);
+}
+
+function toggleSort(){
+  sortByReport=!sortByReport;
+  const btn=document.getElementById('fb-sort');
+  if(btn){
+    btn.textContent=sortByReport?'📍 距離順':'📋 報告順';
+    btn.classList.toggle('on',sortByReport);
+  }
+  renderList();
 }
 
 function zoomToStore(id){
