@@ -407,9 +407,9 @@ function getGPS(){
     stores.forEach(s=>{s.dist=calcDist(userLat,userLng,s.lat,s.lng);});
     stores.sort((a,b)=>a.dist-b.dist);
     const nearest=stores.filter(s=>s.dist<3);
-    status.textContent=`現在地取得済み ・ 3km以内: ${nearest.length}店舗`;
-    btn.textContent='📍 現在地更新';
-    document.getElementById('fb-nearby').style.display='';
+    status.textContent=`📍 取得済`;
+    btn.textContent='📍 更新';
+    // fb-nearbyは表示しない
     const banner=document.getElementById('nearby-banner');
     if(nearest.length>0){banner.style.display='block';banner.textContent=`📍 最寄り: ${nearest[0].name}（${nearest[0].dist.toFixed(1)}km）`;}
     renderList();
