@@ -65,7 +65,7 @@ body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:#f4f
 </div>
 <div id="gps-bar">
   <button id="gps-btn" onclick="getGPS()">📍 現在地を取得</button>
-  <span id="gps-status">GPS未取得 — 取得すると近くの店が距離順に並びます</span>
+  <span id="gps-status"></span>
   <span id="sync-badge" style="font-size:11px;color:#adf;margin-left:4px"></span>
   <button onclick="gasLoad()" style="padding:4px 10px;border-radius:12px;border:1px solid #7ab;background:transparent;color:#7cf;font-size:11px;cursor:pointer;white-space:nowrap">🔄 更新</button>
   <button onclick="startMapAdd()" style="padding:4px 12px;border-radius:12px;border:1px solid #7cf;background:transparent;color:#7cf;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">＋ 地図から追加</button>
@@ -75,16 +75,6 @@ body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:#f4f
   <button class="fb" onclick="setF('seven')">セブン</button>
   <button class="fb" onclick="setF('lawson')">ローソン</button>
   <button class="fb" onclick="setF('famima')">ファミマ</button>
-  <button class="fb" onclick="setF('geo')">GEO</button>
-  <button class="fb" onclick="setF('bookoff')">ブックオフ</button>
-  <button class="fb" onclick="setF('furuichi')">ふるいち</button>
-  <button class="fb" onclick="setF('aeon')">イオン</button>
-  <button class="fb" onclick="setF('toy')">おもちゃ屋</button>
-  <button class="fb" onclick="setF('yamada')">ヤマダ</button>
-  <button class="fb" onclick="setF('joshin')">ジョーシン</button>
-  <button class="fb" onclick="setF('heiando')">平安堂</button>
-  <button class="fb" onclick="setF('trecapit')">トレカピット</button>
-  <button class="fb" onclick="setF('other')">その他</button>
   <button class="fb" id="fb-nearby" style="display:none" onclick="setF('nearby')">📍 近く</button>
 </div>
 <div id="map"></div>
@@ -352,6 +342,7 @@ const RAW=[
 {id:440,name:"平安堂 飯田店",             lat:35.4987,lng:137.8170,type:"heiando",area:"飯田市"},
 // ── トレカピット ──
 {id:451,name:"トレカピット 長野駅前店",   lat:36.6445,lng:138.1859,type:"trecapit",area:"長野市"},
+{id:452,name:"西友 川中島店",             lat:36.594333,lng:138.156836,type:"other",   area:"長野市"},
 ];
 
 const TC={seven:"#E24B4A",lawson:"#378ADD",famima:"#1D9E75",geo:"#7F77DD",bookoff:"#BA7517",furuichi:"#E0820A",aeon:"#D4537E",toy:"#0F6E56",yamada:"#FF0000",joshin:"#0066CC",heiando:"#8B4513",trecapit:"#9B59B6",other:"#888780"};
@@ -364,7 +355,7 @@ let stores=RAW.map(s=>({...s,status:"unknown",time:"",memo:"",timestamp:null,dis
 let cf="all",map,leafletMarkers={},gpsMarker=null,userLat=null,userLng=null;
 
 function initMap(){
-  map=L.map('map').setView([36.45,138.20],10);
+  map=L.map('map').setView([36.45,138.20],12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
     attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',maxZoom:19
   }).addTo(map);
@@ -436,7 +427,7 @@ function calcDist(lat1,lng1,lat2,lng2){
 
 function setF(f){
   cf=f;
-  const lbl={all:"すべて",seven:"セブン",lawson:"ローソン",famima:"ファミマ",geo:"GEO",bookoff:"ブックオフ",furuichi:"ふるいち",aeon:"イオン",toy:"おもちゃ屋",yamada:"ヤマダ",joshin:"ジョーシン",heiando:"平安堂",trecapit:"トレカピット",other:"その他",nearby:"📍 近く"};
+  const lbl={all:"すべて",seven:"セブン",lawson:"ローソン",famima:"ファミマ",nearby:"📍 近く"};
   document.querySelectorAll('.fb').forEach(b=>b.classList.toggle('on',b.textContent===lbl[f]));
   refreshMarkers();renderList();
 }
@@ -555,9 +546,9 @@ function renderList(){
         </div>
         <div class="sc-btns">
           <button class="sb sb-have${s.status==='have'?' active':''}" onclick="rep(${s.id},'have')">✓ あり</button>
-          <button class="sb sb-none${s.status==='none'?' active':''}" onclick="rep(${s.id},'none')">✗ なし</button>
-          <button class="sb sb-unk${s.status==='unknown'?' active':''}" onclick="rep(${s.id},'unknown')">? 未確認</button>
-          <a class="sb-map" href="https://www.google.com/maps/search/${encodeURIComponent(s.name)}/@${s.lat},${s.lng},17z" target="_blank">📍</a>
+          <button class="sb sb-none${s.status==='none'?' active':''}" onclick="confirmRep(${s.id},'none','${s.name}')">✗ なし</button>
+          <button class="sb sb-unk${s.status==='unknown'?' active':''}" onclick="confirmRep(${s.id},'unknown','${s.name}')">? 未確認</button>
+          <button class="sb-map" onclick="zoomToStore(${s.id})">📍</button>
           <button class="sb" style="border-color:#888;color:#888;max-width:32px" onclick="startEditPos(${s.id})" title="位置を修正">✏️</button>
           <button class="sb" style="border-color:#c0392b;color:#c0392b;max-width:32px" onclick="deleteStore(${s.id})" title="削除">🗑️</button>
         </div>
@@ -568,6 +559,39 @@ function renderList(){
   document.getElementById('cnt-h').textContent=stores.filter(s=>s.status==='have').length;
   document.getElementById('cnt-n').textContent=stores.filter(s=>s.status==='none').length;
   document.getElementById('cnt-u').textContent=stores.filter(s=>s.status==='unknown').length;
+}
+
+function confirmRep(id, status, name){
+  const old=document.getElementById('confirm-dialog');
+  if(old) old.remove();
+
+  const label=status==='none'?'✗ 在庫なし':'? 未確認';
+  const color=status==='none'?'#E24B4A':'#888';
+
+  const dlg=document.createElement('div');
+  dlg.id='confirm-dialog';
+  dlg.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid '+color+';padding:14px;z-index:9999;box-shadow:0 -4px 12px rgba(0,0,0,.2)';
+  dlg.innerHTML=`
+    <div style="font-size:13px;font-weight:700;color:${color};margin-bottom:6px">${label} に変更しますか？</div>
+    <div style="font-size:12px;color:#555;margin-bottom:12px">${name}</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="applyRep(${id},'${status}','');document.getElementById('confirm-dialog').remove()"
+        style="flex:1;padding:9px 0;border-radius:6px;border:none;background:${color};color:#fff;font-size:13px;font-weight:700;cursor:pointer">${label}</button>
+      <button onclick="document.getElementById('confirm-dialog').remove()"
+        style="flex:1;padding:9px 0;border-radius:6px;border:1px solid #ccc;background:#fff;font-size:13px;cursor:pointer">キャンセル</button>
+    </div>`;
+  document.body.appendChild(dlg);
+}
+
+function zoomToStore(id){
+  const s=stores.find(x=>x.id===id);
+  if(!s) return;
+  // 地図をその店舗にズーム
+  map.setView([s.lat,s.lng],14);
+  // ピンのポップアップを開く
+  if(leafletMarkers[id]) leafletMarkers[id].openPopup();
+  // 地図エリアまでスクロール
+  document.getElementById('map').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 let nid=RAW.length+1;
@@ -846,11 +870,7 @@ async function gasLoad(){
   const badge=document.getElementById('sync-badge');
   if(badge) badge.textContent='🔄 同期中...';
   try{
-    // GASはリダイレクトするのでno-corsではなくcorsモードで取得
-    const r=await fetch(GAS_URL+'?t='+Date.now(),{
-      method:'GET',
-      redirect:'follow'
-    });
+    const r=await fetch(GAS_URL+'?t='+Date.now(),{method:'GET',redirect:'follow'});
     const json=await r.json();
     if(!json.ok||!json.data) return;
     const now=Date.now();
@@ -858,11 +878,12 @@ async function gasLoad(){
       const s=stores.find(x=>String(x.id)===String(row.id));
       if(!s) return;
       const ts=Number(row.timestamp)||0;
-      if(ts&&(now-ts)<24*60*60*1000){
-        s.status=row.status||'unknown';
+      // 24時間以内 or timestampがない場合も反映
+      if(!ts || (now-ts)<24*60*60*1000){
+        if(row.status&&row.status!=='') s.status=row.status;
         s.memo=row.memo||'';
         s.time=row.time||'';
-        s.timestamp=ts;
+        s.timestamp=ts||now;
         if(leafletMarkers[s.id]) leafletMarkers[s.id].setIcon(makeIcon(s));
       }
     });
