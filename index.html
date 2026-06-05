@@ -63,12 +63,11 @@ body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:#f4f
     <div class="stat"><div class="stat-dot" style="background:#aaa"></div><span id="cnt-u">0</span>未確認</div>
   </div>
 </div>
-<div id="gps-bar">
-  <button id="gps-btn" onclick="getGPS()">📍 現在地を取得</button>
-  <span id="gps-status"></span>
-  <span id="sync-badge" style="font-size:11px;color:#adf;margin-left:4px"></span>
-  <button onclick="gasLoad()" style="padding:4px 10px;border-radius:12px;border:1px solid #7ab;background:transparent;color:#7cf;font-size:11px;cursor:pointer;white-space:nowrap">🔄 更新</button>
-  <button onclick="startMapAdd()" style="padding:4px 12px;border-radius:12px;border:1px solid #7cf;background:transparent;color:#7cf;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">＋ 地図から追加</button>
+<div id="gps-bar" style="flex-wrap:nowrap;overflow-x:auto">
+  <button id="gps-btn" onclick="getGPS()">📍 現在地</button>
+  <span id="gps-status" style="font-size:11px;color:#adf;white-space:nowrap"></span>
+  <button onclick="gasLoad()" style="padding:4px 10px;border-radius:12px;border:1px solid #7ab;background:transparent;color:#7cf;font-size:11px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px">🔄 <span id="sync-badge" style="font-size:11px">更新</span></button>
+  <button onclick="startMapAdd()" style="padding:4px 10px;border-radius:12px;border:1px solid #7cf;background:transparent;color:#7cf;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">＋ 追加</button>
 </div>
 <div id="filter-bar">
   <button class="fb on" onclick="setF('all')">すべて</button>
@@ -403,7 +402,10 @@ function getGPS(){
     userLat=pos.coords.latitude;userLng=pos.coords.longitude;
     if(gpsMarker)gpsMarker.remove();
     gpsMarker=L.marker([userLat,userLng],{icon:L.divIcon({html:'<div class="pin-gps"></div>',className:'',iconSize:[14,14],iconAnchor:[7,7]})}).bindPopup('現在地').addTo(map);
-    map.setView([userLat,userLng],14);
+    // 下パネル分を考慮してオフセット
+    map.setView([userLat,userLng],15,{animate:true});
+    const bottomH=document.getElementById('bottom').offsetHeight;
+    map.panBy([0, bottomH*3],{animate:false});
     stores.forEach(s=>{s.dist=calcDist(userLat,userLng,s.lat,s.lng);});
     stores.sort((a,b)=>a.dist-b.dist);
     const nearest=stores.filter(s=>s.dist<3);
@@ -416,7 +418,7 @@ function getGPS(){
   },err=>{
     status.textContent='取得失敗: '+(err.code===1?'位置情報の許可が必要です':err.message);
     btn.textContent='📍 現在地を取得';
-  },{enableHighAccuracy:true,timeout:10000});
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
 }
 
 function calcDist(lat1,lng1,lat2,lng2){
@@ -890,7 +892,7 @@ async function gasLoad(){
     renderList();
     const now2=new Date();
     const t=`${now2.getHours()}:${String(now2.getMinutes()).padStart(2,'0')}`;
-    if(badge){ badge.textContent=`✅ ${t}同期済`; }
+    if(badge){ badge.textContent=`${t}同期済`; }
   }catch(e){
     console.warn('GAS load error',e);
     if(badge){ badge.textContent='⚠️ オフライン'; setTimeout(()=>{badge.textContent='';},3000); }
