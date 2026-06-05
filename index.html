@@ -888,7 +888,9 @@ async function gasLoad(){
       }
     });
     renderList();
-    if(badge){ badge.textContent='✅ 同期済'; setTimeout(()=>{badge.textContent='';},3000); }
+    const now2=new Date();
+    const t=`${now2.getHours()}:${String(now2.getMinutes()).padStart(2,'0')}`;
+    if(badge){ badge.textContent=`✅ ${t}同期済`; }
   }catch(e){
     console.warn('GAS load error',e);
     if(badge){ badge.textContent='⚠️ オフライン'; setTimeout(()=>{badge.textContent='';},3000); }
