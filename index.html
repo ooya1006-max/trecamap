@@ -79,10 +79,9 @@ body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:#f4f
 <div id="map"></div>
 <div id="notify-banner" style="display:none;position:absolute;left:8px;right:8px;top:8px;z-index:1001;background:#1a1a2e;color:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 3px 12px rgba(0,0,0,.4);max-height:180px;overflow-y:auto;transition:opacity 1s ease"></div>
 <button onclick="startMapAdd()" style="position:absolute;bottom:12px;right:12px;z-index:1000;padding:10px 14px;border-radius:50%;border:none;background:#0f3460;color:#fff;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);line-height:1">＋</button>
+<button onclick="document.getElementById('bottom').scrollTo({top:0,behavior:'smooth'})" style="position:absolute;bottom:12px;right:68px;z-index:1000;padding:8px 12px;border-radius:20px;border:1px solid #ccc;background:#fff;font-size:11px;color:#555;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2)">▲ トップ</button>
 <div id="bottom">
   <div id="nearby-banner"></div>
-  <button onclick="document.getElementById('bottom').scrollTo({top:0,behavior:'smooth'})" 
-    style="position:sticky;top:4px;float:right;margin:4px 4px 0 0;z-index:100;padding:5px 10px;border-radius:20px;border:1px solid #ccc;background:#fff;font-size:11px;color:#555;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)">▲ トップ</button>
   <div id="slist"></div>
   <div id="add-section">
     <div class="atitle">＋ 店舗を追加</div>
@@ -534,7 +533,9 @@ function addMarker(s){
   if(leafletMarkers[s.id]) leafletMarkers[s.id].remove();
   const m=L.marker([s.lat,s.lng],{icon:makeIcon(s)}).addTo(map);
   m.bindPopup(`<b>${s.name}</b>${s.time?'<br><small>'+s.time+'</small>':''}`);
-  m.on('click',()=>scrollToStore(s.id));
+  m.on('click',()=>{
+    if(!window._skipScroll) scrollToStore(s.id);
+  });
   leafletMarkers[s.id]=m;
 }
 
@@ -552,7 +553,23 @@ function refreshMarkers(){
 
 function scrollToStore(id){
   const el=document.getElementById('sc-'+id);
-  if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+  if(!el) return;
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+  // 既存ハイライトをリセット
+  if(window._hlEl && window._hlEl!==el){
+    clearTimeout(window._hlTimer);
+    window._hlEl.style.transition='';
+    window._hlEl.style.background='';
+  }
+  // 新しくハイライト
+  el.style.transition='background 0.3s';
+  el.style.background='#fff176';
+  window._hlEl=el;
+  window._hlTimer=setTimeout(()=>{
+    el.style.transition='background 1s';
+    el.style.background='';
+    window._hlEl=null;
+  },7000);
 }
 
 function getGPS(){
@@ -807,7 +824,9 @@ function flyToPoint(lat,lng){
 function zoomToStore(id){
   const s=stores.find(x=>x.id===id);
   if(!s) return;
-  flyToPoint(s.lat,s.lng);
+  window._skipScroll=true;
+  setTimeout(()=>{window._skipScroll=false;},1000);
+  map.flyTo([s.lat,s.lng],15,{animate:true,duration:0.8});
   if(leafletMarkers[id]) leafletMarkers[id].openPopup();
   document.getElementById('map').scrollIntoView({behavior:'smooth',block:'start'});
 }
