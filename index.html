@@ -152,6 +152,16 @@ const RAW=[
 {id:221,name:"ファミマ 篠ノ井布施高田店",lat:36.576906,lng:138.144510,type:"famima", area:"長野市"},
 {id:222,name:"ファミマ 長野篠ノ井塩崎店",lat:36.542879,lng:138.105879,type:"famima", area:"長野市"},
 {id:864,name:"セブン 篠ノ井塩崎店",      lat:36.547467,lng:138.107340,type:"seven",  area:"長野市"},
+// 追加漏れ店舗
+{id:865,name:"セブン 長野木工団地店",       lat:36.653191,lng:138.238664,type:"seven",  area:"長野市"},
+{id:866,name:"ジョーシン 須坂イオンモール店",lat:36.639304,lng:138.273820,type:"joshin", area:"須坂市"},
+{id:867,name:"セブン 長野柳原店",           lat:36.662803,lng:138.257553,type:"seven",  area:"長野市"},
+{id:868,name:"セブン 長野東和田店",         lat:36.654066,lng:138.223629,type:"seven",  area:"長野市"},
+{id:869,name:"ファミマ 長野上高田店",       lat:36.639502,lng:138.212603,type:"famima", area:"長野市"},
+{id:870,name:"ローソン 川中島今里店",       lat:36.611493,lng:138.144746,type:"lawson", area:"長野市"},
+{id:871,name:"ローソン 川中島御厨店",       lat:36.598641,lng:138.158958,type:"lawson", area:"長野市"},
+{id:872,name:"セブン 川中島中学校前店",     lat:36.602339,lng:138.154831,type:"seven",  area:"長野市"},
+{id:873,name:"セブン 長野里島店",           lat:36.581389,lng:138.151596,type:"seven",  area:"長野市"},
 {id:223,name:"ローソン 篠ノ井北小森店",  lat:36.579461,lng:138.160751,type:"lawson", area:"長野市"},
 {id:224,name:"ローソン 長野広徳店",      lat:36.638358,lng:138.187175,type:"lawson", area:"長野市"},
 {id:225,name:"ローソン 長野稲里町田牧店",lat:36.588786,lng:138.173877,type:"lawson", area:"長野市"},
@@ -168,10 +178,8 @@ const RAW=[
 {id:602,name:"セブン 長野川中島駅前店",  lat:36.6142,lng:138.1514,type:"seven",  area:"長野市"},
 {id:603,name:"セブン 長野今里店",        lat:36.6001,lng:138.1425,type:"seven",  area:"長野市"},
 {id:604,name:"セブン 長野稲里南原店",    lat:36.5893,lng:138.1532,type:"seven",  area:"長野市"},
-{id:605,name:"ローソン 長野川中島今里店",lat:36.5987,lng:138.1590,type:"lawson", area:"長野市"},
-{id:606,name:"ローソン 川中島御厨店",    lat:36.5987,lng:138.1590,type:"lawson", area:"長野市"},
-{id:607,name:"ファミマ 長野中氷鉋店",    lat:36.6106,lng:138.1703,type:"famima", area:"長野市"},
 {id:608,name:"ローソン 長野川中島原店",  lat:36.5871,lng:138.1527,type:"lawson", area:"長野市"},
+{id:607,name:"ファミマ 長野中氷鉋店",    lat:36.6106,lng:138.1703,type:"famima", area:"長野市"},
 // 青木島・増里エリア
 {id:609,name:"セブン 長野青木島店",      lat:36.6171,lng:138.1760,type:"seven",  area:"長野市"},
 {id:610,name:"セブン 長野青木島団地入口店",lat:36.6179,lng:138.1832,type:"seven",area:"長野市"},
@@ -518,7 +526,7 @@ function makeIcon(s){
 function addMarker(s){
   if(leafletMarkers[s.id]) leafletMarkers[s.id].remove();
   const m=L.marker([s.lat,s.lng],{icon:makeIcon(s)}).addTo(map);
-  m.bindPopup(`<b>${s.name}</b><br><small>${s.area}</small><br><span style="color:${SC[s.status]}">${SL[s.status]}</span>${s.time?'<br><small>'+s.time+'</small>':''}`);
+  m.bindPopup(`<b>${s.name}</b>${s.time?'<br><small>'+s.time+'</small>':''}`);
   m.on('click',()=>scrollToStore(s.id));
   leafletMarkers[s.id]=m;
 }
@@ -652,7 +660,7 @@ function applyRep(id,status,memo){
   s.time=`${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
   if(leafletMarkers[id]){
     leafletMarkers[id].setIcon(makeIcon(s));
-    leafletMarkers[id].setPopupContent(`<b>${s.name}</b><br><small>${s.area}</small><br><span style="color:${SC[s.status]}">${SL[s.status]}${s.memo?' : '+s.memo:''}</span><br><small>${s.time}</small>`);
+    leafletMarkers[id].setPopupContent(`<b>${s.name}</b><br><small>${s.time}</small>`);
   }
   gasPost({id:s.id,status:s.status,memo:s.memo,time:s.time,timestamp:s.timestamp});
   renderList();
@@ -1074,38 +1082,31 @@ async function gasLoad(){
     const r=await fetch(GAS_URL+'?t='+Date.now(),{method:'GET',redirect:'follow'});
     const json=await r.json();
     if(!json.ok||!json.data) return;
-    const now=Date.now();
     const newUpdates=[];
     json.data.forEach(row=>{
       const s=stores.find(x=>String(x.id)===String(row.id));
       if(!s) return;
+      const prevStatus=s.status;
+      const prevTs=s.timestamp||0;
       const ts=Number(row.timestamp)||0;
-      const now2=Date.now();
-      if(!ts || (now2-ts)<24*60*60*1000){
-        const prevStatus=s.status;
-        const prevTs=s.timestamp||0;
-        if(row.status&&row.status!=='') s.status=row.status;
-        s.memo=row.memo||'';
-        s.time=row.time||'';
-        s.timestamp=ts||now2;
-        if(leafletMarkers[s.id]) leafletMarkers[s.id].setIcon(makeIcon(s));
-        // 新着検出：前回同期より新しい報告かつステータスが変わった＆5分以内
-        if(ts>prevTs && s.status!==prevStatus && s.status!=='unknown' && (Date.now()-ts)<5*60*1000){
-          newUpdates.push(s);
-        }
+      // statusが空でなければ無条件に反映
+      if(row.status && row.status!=='') s.status=row.status;
+      if(row.memo!==undefined) s.memo=row.memo||'';
+      if(row.time && row.time!=='') s.time=String(row.time);
+      if(ts) s.timestamp=ts;
+      if(leafletMarkers[s.id]) leafletMarkers[s.id].setIcon(makeIcon(s));
+      // 新着検出：5分以内の新しい報告
+      if(ts>prevTs && s.status!==prevStatus && s.status!=='unknown' && (Date.now()-ts)<5*60*1000){
+        newUpdates.push(s);
       }
     });
-    // 同期時はスクロール位置を保持したままrenderList
     const bottom=document.getElementById('bottom');
     const scrollTop=bottom?bottom.scrollTop:0;
     renderList();
     if(bottom) bottom.scrollTop=scrollTop;
-
-    // 新着通知バナー表示
     if(newUpdates.length>0) showNotifyBanner(newUpdates);
-
-    const now3=new Date();
-    const t=`${now3.getHours()}:${String(now3.getMinutes()).padStart(2,'0')}`;
+    const now=new Date();
+    const t=`${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
     if(badge){ badge.textContent=`${t}同期済`; }
   }catch(e){
     console.warn('GAS load error',e);
