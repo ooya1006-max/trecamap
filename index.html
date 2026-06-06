@@ -800,7 +800,7 @@ function toggleSort(){
 
 function flyToPoint(lat,lng){
   const bottomH=document.getElementById('bottom').offsetHeight;
-  const offset=L.point(0, Math.round(bottomH/2));
+  const offset=L.point(0, Math.round(bottomH/3));
   map.flyTo(map.unproject(map.project([lat,lng],15).add(offset),15),15,{animate:true,duration:0.8});
 }
 
