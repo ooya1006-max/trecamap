@@ -81,6 +81,8 @@ body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:#f4f
 <button onclick="startMapAdd()" style="position:absolute;bottom:12px;right:12px;z-index:1000;padding:10px 14px;border-radius:50%;border:none;background:#0f3460;color:#fff;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);line-height:1">＋</button>
 <div id="bottom">
   <div id="nearby-banner"></div>
+  <button onclick="document.getElementById('bottom').scrollTo({top:0,behavior:'smooth'})" 
+    style="position:sticky;top:4px;float:right;margin:4px 4px 0 0;z-index:100;padding:5px 10px;border-radius:20px;border:1px solid #ccc;background:#fff;font-size:11px;color:#555;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)">▲ トップ</button>
   <div id="slist"></div>
   <div id="add-section">
     <div class="atitle">＋ 店舗を追加</div>
@@ -152,7 +154,13 @@ const RAW=[
 {id:221,name:"ファミマ 篠ノ井布施高田店",lat:36.576906,lng:138.144510,type:"famima", area:"長野市"},
 {id:222,name:"ファミマ 長野篠ノ井塩崎店",lat:36.542879,lng:138.105879,type:"famima", area:"長野市"},
 {id:864,name:"セブン 篠ノ井塩崎店",      lat:36.547467,lng:138.107340,type:"seven",  area:"長野市"},
-// 追加漏れ店舗
+// 追加店舗
+{id:874,name:"セブン 長野二線路通り店",    lat:36.644751,lng:138.187822,type:"seven",  area:"長野市"},
+{id:875,name:"セブン 長野問御所店",         lat:36.651437,lng:138.187399,type:"seven",  area:"長野市"},
+{id:876,name:"ファミマ 長野里島店",         lat:36.581425,lng:138.154491,type:"famima", area:"長野市"},
+{id:877,name:"ファミマ 篠ノ井杵淵店",       lat:36.582280,lng:138.183926,type:"famima", area:"長野市"},
+{id:878,name:"ファミマ 合戦場店",           lat:36.577393,lng:138.157675,type:"famima", area:"長野市"},
+{id:879,name:"ファミマ 長野水沢上庭店",     lat:36.581726,lng:138.175889,type:"famima", area:"長野市"},
 {id:865,name:"セブン 長野木工団地店",       lat:36.653191,lng:138.238664,type:"seven",  area:"長野市"},
 {id:866,name:"ジョーシン 須坂イオンモール店",lat:36.639304,lng:138.273820,type:"joshin", area:"須坂市"},
 {id:867,name:"セブン 長野柳原店",           lat:36.662803,lng:138.257553,type:"seven",  area:"長野市"},
@@ -168,7 +176,7 @@ const RAW=[
 // 松代エリア
 {id:210,name:"セブン 松代東寺尾店",      lat:36.5624,lng:138.1822,type:"seven",  area:"長野市"},
 {id:211,name:"セブン 長野IC店",          lat:36.5775,lng:138.1970,type:"seven",  area:"長野市"},
-{id:212,name:"セブン 松代東テラオ店",    lat:36.5858,lng:138.1997,type:"seven",  area:"長野市"},
+{id:212,name:"セブン 松代東テラオ店",    lat:36.585779,lng:138.199732,type:"seven",  area:"長野市"},
 {id:213,name:"ファミマ 長野松代店",      lat:36.5623,lng:138.2001,type:"famima", area:"長野市"},
 {id:214,name:"ファミマ 長野松代町東条店",lat:36.5564,lng:138.2064,type:"famima", area:"長野市"},
 {id:215,name:"ローソン 長野松代町店",    lat:36.5710,lng:138.1977,type:"lawson", area:"長野市"},
@@ -232,7 +240,6 @@ const RAW=[
 {id:713,name:"ファミマ 長野安茂里店",      lat:36.623381,lng:138.147591,type:"famima", area:"長野市"},
 {id:714,name:"ファミマ 須坂IC南店",        lat:36.632840,lng:138.270035,type:"famima", area:"長野市"},
 {id:715,name:"ファミマ 若穂綿内店",        lat:36.622778,lng:138.257163,type:"famima", area:"長野市"},
-{id:716,name:"セブン 長野松代東テラオ店",  lat:36.585779,lng:138.199732,type:"seven",  area:"長野市"},
 {id:717,name:"ファミマ 長野松代店",        lat:36.562273,lng:138.200069,type:"famima", area:"長野市"},
 {id:718,name:"ファミマ 長野松代町東条店",  lat:36.556404,lng:138.206367,type:"famima", area:"長野市"},
 {id:719,name:"ローソン 長野松代町店",      lat:36.571007,lng:138.197661,type:"lawson", area:"長野市"},
@@ -558,9 +565,9 @@ function getGPS(){
     userLat=pos.coords.latitude;userLng=pos.coords.longitude;
     if(gpsMarker)gpsMarker.remove();
     gpsMarker=L.marker([userLat,userLng],{icon:L.divIcon({html:'<div class="pin-gps"></div>',className:'',iconSize:[14,14],iconAnchor:[7,7]})}).bindPopup('現在地').addTo(map);
-    const bottomH=document.getElementById('bottom').offsetHeight;
-    const headerH=document.getElementById('gps-bar').offsetHeight+document.getElementById('filter-bar').offsetHeight+56;
-    map.flyTo([userLat,userLng],15,{animate:true,paddingTopLeft:[0,headerH],paddingBottomRight:[0,bottomH]});
+    const bottomH2=document.getElementById('bottom').offsetHeight;
+    const headerH2=document.getElementById('gps-bar').offsetHeight+document.getElementById('filter-bar').offsetHeight+56;
+    map.flyTo([userLat,userLng],15,{animate:true,paddingTopLeft:[0,headerH2],paddingBottomRight:[0,bottomH2]});
     stores.forEach(s=>{s.dist=calcDist(userLat,userLng,s.lat,s.lng);});
     stores.sort((a,b)=>a.dist-b.dist);
     const nearest=stores.filter(s=>s.dist<3);
