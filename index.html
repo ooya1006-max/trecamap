@@ -567,7 +567,7 @@ function getGPS(){
     gpsMarker=L.marker([userLat,userLng],{icon:L.divIcon({html:'<div class="pin-gps"></div>',className:'',iconSize:[14,14],iconAnchor:[7,7]})}).bindPopup('現在地').addTo(map);
     const bottomH2=document.getElementById('bottom').offsetHeight;
     const headerH2=document.getElementById('gps-bar').offsetHeight+document.getElementById('filter-bar').offsetHeight+56;
-    map.flyTo([userLat,userLng],15,{animate:true,paddingTopLeft:[0,headerH2],paddingBottomRight:[0,bottomH2]});
+    map.flyTo([userLat,userLng],15,{animate:true,paddingTopLeft:[0,headerH2],paddingBottomRight:[0,bottomH2*2]});
     stores.forEach(s=>{s.dist=calcDist(userLat,userLng,s.lat,s.lng);});
     stores.sort((a,b)=>a.dist-b.dist);
     const nearest=stores.filter(s=>s.dist<3);
