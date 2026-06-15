@@ -464,6 +464,19 @@ const RAW=[
 {id:942,name:"ホビーゾーン 松本店",           lat:36.233848,lng:137.977802,type:"other",  area:"松本市"},
 {id:943,name:"セブン 須坂南店",               lat:36.647519,lng:138.295421,type:"seven",  area:"須坂市"},
 {id:944,name:"GEO 千曲店",                    lat:36.530959,lng:138.122421,type:"geo",    area:"千曲市"},
+// 西松屋
+{id:945,name:"西松屋 長野稲里店",             lat:36.605657,lng:138.167166,type:"other",  area:"長野市"},
+{id:946,name:"西松屋 長野平林店",             lat:36.654427,lng:138.215600,type:"other",  area:"長野市"},
+{id:947,name:"西松屋 長野上松店",             lat:36.675149,lng:138.199165,type:"other",  area:"長野市"},
+{id:948,name:"西松屋 須坂インター店",         lat:36.636037,lng:138.272524,type:"other",  area:"須坂市"},
+{id:949,name:"西松屋 中野一本木店",           lat:36.758298,lng:138.370337,type:"other",  area:"中野市"},
+{id:950,name:"西松屋 伊那店",                 lat:35.827648,lng:137.957968,type:"other",  area:"伊那市"},
+{id:951,name:"西松屋 飯田店",                 lat:35.499134,lng:137.823707,type:"other",  area:"飯田市"},
+{id:952,name:"西松屋 エルさあずみ野店",       lat:36.245297,lng:137.888594,type:"other",  area:"安曇野市"},
+{id:953,name:"西松屋 穂高店",                 lat:36.336851,lng:137.889441,type:"other",  area:"安曇野市"},
+{id:954,name:"西松屋 塩尻店",                 lat:36.159420,lng:137.951858,type:"other",  area:"塩尻市"},
+// バースデー
+{id:955,name:"バースデー 長野稲田店",          lat:36.672025,lng:138.231258,type:"other",  area:"長野市"},
 // 千曲市追加
 {id:931,name:"ファミマ 千曲屋代団地店",      lat:36.546855,lng:138.134108,type:"famima", area:"千曲市"},
 {id:932,name:"ローソン 須坂新保店",           lat:36.647490,lng:138.320000,type:"lawson", area:"須坂市"},
@@ -634,7 +647,7 @@ function showMemoInput(id){
     <div style="font-size:12px;font-weight:700;color:#1565C0;margin-bottom:8px">✓ 在庫あり：${s.name}</div>
     <div style="font-size:11px;color:#666;margin-bottom:6px">何がありましたか？（任意）</div>
     <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px" id="memo-tags">
-      ${['ポケカ','ワンピース','その他'].map(t=>`<button onclick="toggleTag(this,'${t}')" style="font-size:12px;padding:5px 14px;border-radius:12px;border:1px solid #ccc;background:#fff;cursor:pointer;color:#555">${t}</button>`).join('')}
+      ${['ポケカ','ワンピース','ドラゴンボール','その他'].map(t=>`<button onclick="toggleTag(this,'${t}')" style="font-size:12px;padding:5px 14px;border-radius:12px;border:1px solid #ccc;background:#fff;cursor:pointer;color:#555">${t}</button>`).join('')}
     </div>
     <input id="memo-free" placeholder="自由入力（残数・弾名など）" style="width:100%;font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid #ccc;margin-bottom:8px;box-sizing:border-box">
     <div style="display:flex;gap:6px">
