@@ -144,7 +144,7 @@ const RAW=[
 {id:205,name:"セブン 篠ノ井御幣川店",    lat:36.566257,lng:138.146425,type:"seven",  area:"長野市"},
 {id:206,name:"セブン 篠ノ井布施高田店",  lat:36.577631,lng:138.140905,type:"seven",  area:"長野市"},
 {id:207,name:"セブン 篠ノ井南店",        lat:36.570845,lng:138.137263,type:"seven",  area:"長野市"},
-{id:208,name:"セブン 篠ノ井合店",        lat:36.572649,lng:138.154291,type:"seven",  area:"長野市"},
+{id:208,name:"セブン 篠ノ井会店",        lat:36.572649,lng:138.154291,type:"seven",  area:"長野市"},
 {id:209,name:"セブン 篠ノ井東福寺店",    lat:36.584981,lng:138.175208,type:"seven",  area:"長野市"},
 {id:218,name:"セブン 篠ノ井布施五明店",  lat:36.578671,lng:138.129365,type:"seven",  area:"長野市"},
 {id:219,name:"セブン 長野山布施店",      lat:36.616584,lng:138.095305,type:"seven",  area:"長野市"},
@@ -548,6 +548,7 @@ const SI={seven:"7",lawson:"L",famima:"F",geo:"G",bookoff:"B",furuichi:"古",aeo
 
 let stores=RAW.map(s=>({...s,status:"unknown",time:"",memo:"",timestamp:null,dist:null}));
 let cf="all",map,leafletMarkers={},gpsMarker=null,userLat=null,userLng=null,sortByReport=false;
+let haveHistorySet=new Set();
 
 function initMap(){
   map=L.map('map').setView([36.45,138.20],12);
@@ -559,7 +560,9 @@ function initMap(){
 
 function makeIcon(s){
   const sc=SC[s.status],tc=TC[s.type];
-  const html=`<div class="pin-outer"><div class="pin-circle" style="background:${sc}"><span style="color:white;font-weight:900;font-size:9px">${SI[s.type]}</span></div><div class="pin-tail"></div></div>`;
+  const hasHistory=haveHistorySet.has(String(s.id));
+  const border=hasHistory?'border:2.5px solid #FFD700;box-shadow:0 0 4px rgba(255,215,0,.8);':'';
+  const html=`<div class="pin-outer"><div class="pin-circle" style="background:${sc};${border}"><span style="color:white;font-weight:900;font-size:9px">${SI[s.type]}</span></div><div class="pin-tail"></div></div>`;
   return L.divIcon({html,className:'',iconSize:[24,29],iconAnchor:[12,29],popupAnchor:[0,-30]});
 }
 
@@ -1149,6 +1152,9 @@ async function gasLoad(){
     const r=await fetch(GAS_URL+'?t='+Date.now(),{method:'GET',redirect:'follow'});
     const json=await r.json();
     if(!json.ok||!json.data) return;
+
+    // 過去在庫あり履歴を反映（30日以内）
+    if(json.haveHistory) haveHistorySet=new Set(json.haveHistory.map(String));
 
     // 同じIDが複数行ある場合は最新timestampのものだけ使う
     const latestMap={};
